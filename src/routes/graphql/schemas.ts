@@ -1,5 +1,5 @@
 import { Type } from '@fastify/type-provider-typebox';
-import { GraphQLObjectType, GraphQLSchema, GraphQLString, GraphQLFloat, GraphQLList, GraphQLEnumType, GraphQLInt, GraphQLNonNull, GraphQLBoolean } from 'graphql';
+import { GraphQLObjectType, GraphQLSchema, GraphQLString, GraphQLFloat, GraphQLList, GraphQLEnumType, GraphQLInt, GraphQLNonNull, GraphQLBoolean, GraphQLInputObjectType } from 'graphql';
 import { PrismaClient } from '@prisma/client';
 import { UUIDType } from './types/uuid.js';
 
@@ -220,6 +220,74 @@ const QueryType = new GraphQLObjectType({
   }
 });
 
+const CreatePostInputType = new GraphQLInputObjectType({
+  name: 'CreatePostInput',
+  fields: {
+    title: {type:GraphQLString},
+    content: {type: GraphQLString},
+    authorId: {type: UUIDType},
+  }
+})
+
+const CreateUserInputType = new GraphQLInputObjectType({
+  name: 'CreateUserInput',
+  fields: {
+    name: {type:GraphQLString},
+    balance: {type: GraphQLFloat},
+  }
+})
+
+const CreateProfileInputType = new GraphQLInputObjectType({
+  name: 'CreateProfileInput',
+  fields: {
+    isMale: {type: GraphQLBoolean},
+    yearOfBirth: {type: GraphQLInt},
+    memberTypeId: {type: MemberTypeId},
+    userId: {type: UUIDType}
+  }
+})
+
+const MutationType = new GraphQLObjectType({
+  name: 'Mutation',
+  fields: {
+    createPost: {
+      type: PostType,
+      args: { dto: { type: new GraphQLNonNull(CreatePostInputType) } },
+      resolve: async (_root, args: { dto }, context: {prisma: PrismaClient}, _info) => {
+        const newPost = await context.prisma.post.create({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          data: args.dto
+        })
+        return newPost;
+      },
+    },
+    createUser: {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      type: UserType,
+      args: { dto: { type: new GraphQLNonNull(CreateUserInputType) } },
+      resolve: async (_root, args: { dto }, context: {prisma: PrismaClient}, _info) => {
+        const newUser = await context.prisma.user.create({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          data: args.dto
+        })
+        return newUser;
+      },
+    },
+    createProfile: {
+      type: ProfileType,
+      args: { dto: { type: new GraphQLNonNull(CreateProfileInputType) } },
+      resolve: async (_root, args: { dto }, context: {prisma: PrismaClient}, _info) => {
+        const newProfile = await context.prisma.profile.create({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          data: args.dto
+        })
+        return newProfile;
+      },
+    }
+  }
+})
+
 export const schemaGraphql = new GraphQLSchema({
   query: QueryType,
+  mutation: MutationType,
 });
